@@ -16,10 +16,23 @@ class AuthService {
       throw new ValidationError("User already exists");
     }
 
-    // Validate: Admin users must have a store assigned
-    const userRole = role || "user";
-    if (userRole === "admin" && !store) {
-      throw new ValidationError("Admin users must be assigned to a store");
+    // Validate role
+    const userRole = role || "buyer";
+    const validRoles = ["admin", "seller", "buyer"];
+    if (!validRoles.includes(userRole)) {
+      throw new ValidationError(
+        `Invalid role. Must be one of: ${validRoles.join(", ")}`
+      );
+    }
+
+    // Validate: Seller users must have a store assigned
+    // if (userRole === "seller" && !store) {
+    //   throw new ValidationError("Seller users must be assigned to a store");
+    // }
+
+    // Validate: Admin users cannot be assigned to a store (they manage stores)
+    if (userRole === "admin" && store) {
+      throw new ValidationError("Admin users cannot be assigned to a store");
     }
 
     // Hash password
@@ -34,11 +47,6 @@ class AuthService {
       addresses: addresses || [],
       phone: phone || "",
     });
-
-    // If admin, assign them to the store
-    if (userRole === "admin" && store) {
-      await Store.findByIdAndUpdate(store, { admin: newUser._id });
-    }
 
     return newUser;
   }

@@ -10,16 +10,8 @@ class AuthController {
   });
 
   signup = catchAsync(async (req, res) => {
-    const { email, name, password, role, addresses, phone, store } = req.body;
-    const user = await authService.signup({
-      name,
-      email,
-      password,
-      role,
-      addresses,
-      phone,
-      store,
-    });
+    const user = await authService.signup(req.body);
+
     const userResponse = {
       _id: user._id,
       email: user.email,

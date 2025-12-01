@@ -6,13 +6,16 @@ import {
   paginatedResponse,
 } from "../utils/response.js";
 import { ValidationError } from "../utils/error.js";
+import Store from "../models/store.model.js";
 
 class productController {
   createProduct = catchAsync(async (req, res) => {
-    // Check if admin has a store assigned
-    if (!req.user.store) {
+    // Find store by user_id
+    const store = await Store.findOne({ user_id: req.user._id });
+    
+    if (!store) {
       throw new ValidationError(
-        "Admin must be assigned to a store to create products"
+        "Seller must be assigned to a store to create products"
       );
     }
 
@@ -29,7 +32,7 @@ class productController {
     } = req.body;
 
     // Get store ID
-    const storeId = req.user.store._id;
+    const storeId = store._id;
 
     const newProduct = await productService.createProduct({
       name,
@@ -38,8 +41,8 @@ class productController {
       images,
       category,
       brand,
-      createdBy: req.user._id, // Use authenticated admin user's ID
-      store: storeId, // Automatically assign admin's store
+      createdBy: req.user._id, // Use authenticated seller user's ID
+      store: storeId, // Automatically assign seller's store
       stock,
       rating,
       reviews,
@@ -62,15 +65,15 @@ class productController {
   });
 
   getStoreProducts = catchAsync(async (req, res) => {
-    // Check if admin has a store assigned
-    if (!req.user.store) {
-      throw new ValidationError(
-        "Curret User has no store assigned"
-      );
+    // Find store by user_id
+    const store = await Store.findOne({ user_id: req.user._id });
+    
+    if (!store) {
+      throw new ValidationError("Current user has no store assigned");
     }
 
     const query = req.query;
-    const storeId = req.user.store._id;
+    const storeId = store._id;
     const { results, page, limit, total } =
       await productService.getStoreProducts(query, storeId);
     paginatedResponse(

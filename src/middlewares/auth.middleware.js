@@ -1,7 +1,7 @@
 import { verifyToken } from "../utils/jwt.js";
 import { UnauthorizedError } from "../utils/error.js";
 import User from "../models/user.model.js";
-import Store from "../models/store.model.js";
+
 export const authenticate = async (req, res, next) => {
   try {
     // Get token from Authorization header
@@ -21,14 +21,6 @@ export const authenticate = async (req, res, next) => {
 
     if (!user) {
       throw new UnauthorizedError("User not found");
-    }
-
-    // If user is admin, find their store
-    if (user.role === "admin") {
-      const store = await Store.findOne({ admin: user._id }).select("name logo");
-      if (store) {
-        user.store = store; // Attach store to user object for backward compatibility
-      }
     }
 
     // Attach user to request

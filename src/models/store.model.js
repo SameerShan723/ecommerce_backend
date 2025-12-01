@@ -22,15 +22,14 @@ const storeSchema = mongoose.Schema(
       email: { type: String },
       phone: { type: String },
     },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-    admin: {
+    user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true, // One admin per store
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true }
@@ -39,4 +38,3 @@ const storeSchema = mongoose.Schema(
 const Store = mongoose.model("Store", storeSchema);
 
 export default Store;
-

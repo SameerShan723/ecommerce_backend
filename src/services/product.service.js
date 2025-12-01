@@ -41,15 +41,20 @@ class productServices {
       filter.name = { $regex: query.search, $options: "i" };
     }
     if (query.category) {
-      const categoryDoc = await Category.findOne({
+      const categoryDoc = (filter.category = Category.find({
         category_name: { $regex: query.category, $options: "i" },
-      });
+      }));
       if (categoryDoc) {
         filter.category = categoryDoc._id;
       }
     }
 
-    // Regular users see all products from all stores (no store filter)
+    if (req.user?.role === "seller") {
+      const store = await Store.findOne({ user_id: req.user._id });
+      if (store) {
+        filter.store = store._id.toString();
+      }
+    }
 
     if (query.minPrice && query.maxPrice) {
       filter.price = { $gte: query.minPrice, $lte: query.maxPrice };
@@ -81,6 +86,7 @@ class productServices {
       .sort(sort)
       .skip(skip)
       .limit(limit);
+
     // const products = await Product.find()
     //   .populate("store", "name logo")
     //   .populate("category", "category_name")
@@ -107,57 +113,6 @@ class productServices {
   async deleteProduct(productId) {
     await Product.findByIdAndDelete(productId);
     return;
-  }
-
-  async getStoreProducts(query, storeId) {
-    let filter = {
-      store: storeId, // Only products from admin's store
-    };
-
-    if (query.search) {
-      filter.name = { $regex: query.search, $options: "i" };
-    }
-    if (query.category) {
-      const categoryDoc = await Category.findOne({
-        category_name: { $regex: query.category, $options: "i" },
-      });
-      if (categoryDoc) {
-        filter.category = categoryDoc._id;
-      }
-    }
-
-    if (query.minPrice && query.maxPrice) {
-      filter.price = { $gte: query.minPrice, $lte: query.maxPrice };
-    } else if (query.minPrice) {
-      filter.price = { $gte: query.minPrice };
-    } else if (query.maxPrice) {
-      filter.price = { $lte: query.maxPrice };
-    }
-
-    if (query.brand) {
-      filter.brand = { $regex: query.brand, $options: "i" };
-    }
-
-    let sort = {};
-    if (query.sortBy) {
-      sort[query.sortBy] = query.order === "desc" ? -1 : 1;
-    }
-
-    // pagination
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 15;
-    const skip = (page - 1) * limit;
-    const total = await Product.countDocuments(filter);
-
-    const results = await Product.find(filter)
-      .populate("store", "name logo")
-      .populate("category", "category_name")
-      .populate("createdBy", "name email")
-      .sort(sort)
-      .skip(skip)
-      .limit(limit);
-
-    return { results, total, limit, page };
   }
 }
 
